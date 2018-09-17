@@ -1,0 +1,367 @@
+;Nadia Noormohamed
+;9210605
+
+RESET B systemInitialisation
+B.
+B SVCHandler
+B.
+B.
+B.
+B interruptServiceTable
+B.
+
+
+
+
+timerCompareRegister EQU &1000000C          ;used to compare to, to check if required time has passed
+directionLatch EQU &20000005
+dataLatch EQU &20000004
+input_read EQU &04              ;R/~W=1, RS=0, E=0 bus disable
+input_read_enable_bus EQU &05   ;R/~W=1, RS=0, E:=1 bus enable
+output_write EQU &02            ;R/~W = 0, RS = 1, E=0
+output_write_enable_bus EQU &03 ; R/~W = 0, RS = 1, E=1
+LCDStatusCheck EQU &80
+port_A EQU &10000000
+port_B EQU &10000004
+UpperButtonPressed EQU :01000000
+LowerButtonPressed EQU :10000000
+Hardwaretimer EQU &10000008
+moveCursor EQU :00000010
+InterruptCheckAddr EQU &10000018            ;used determine if a hardware has interrupted
+InterruptEnableDisableSetAddr EQU &1000001c ;Used to set interrupt enable of the hardware
+;user mode stack
+
+;These addresses are counters for each button, if a button is active for a
+;minimum of 5ms it is considered to be pressed
+
+three DEFS 0
+six DEFS 0
+nine DEFS 0
+hash DEFS 0
+two DEFS 0
+five DEFS 0
+eight DEFS 0
+zero DEFS 0
+one DEFS 0
+four DEFS 0
+seven DEFS 0
+star DEFS 0
+
+;This address loacation store 1 if the button has been pressed and 0 if it has not
+Output DEFB 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+
+ASCIIValues DEFB '3', '6', '9', '#', '2', '5', '8', '0', '1', '4', '7', '*'
+
+
+ALIGN
+stack DEFS 100
+UserStack
+
+;supervisor mode stack
+ALIGN
+DEFS 100
+SupervisorStack
+
+;IRQ mode stack
+ALIGN
+DEFS 100
+IRQStack
+
+TimerInterruptEnable EQU 0
+outputToLCD EQU 1
+;------------------------------------------------------------------------------
+;Stack initialisation
+;------------------------------------------------------------------------------
+
+;---Initialising the supervisor mode stack
+systemInitialisation     MRS R0, CPSR
+                         BIC R0, R0, #&1F
+                         ORR R0, R0, #&13
+                         MSR CPSR_c, R0
+                         ADR SP, SupervisorStack
+
+IRQInitialisation        MRS R0, CPSR
+                         BIC R0, R0, #&1F
+                         ORR R0, R0, #&12
+                         MSR CPSR_c, R0
+                         ADR SP, IRQStack
+
+;Setting user mode stack pointer in the system mode
+userInitialisation       MRS R0, CPSR
+                         BIC R0, R0, #&1F
+                         ORR R0, R0, #&1F
+                         MSR CPSR_c, R0
+                         ADR SP, UserStack
+
+
+;---Switching to user mode from system mode
+                         MOV R14, #&D0
+                         MSR SPSR, R14
+                         ADR R14, userMode
+                         MOVS PC, R14
+
+;------------------------------------------------------------------------------
+;User Mode
+;------------------------------------------------------------------------------
+userMode                 ;Enabling the processor to be interrupted in user mode
+                         MRS R1, CPSR                   ;moving from CPSR to R1
+                         BIC R1, R1, #:10000000         ;setting bit 7 to 0
+                         MSR R1, CPSR                   ;moving from R1 to CPSR
+                         MOV R0, #0                     ;
+                         SVC 0
+
+;------------------------------------------------------------------------------
+;Interrupt Mode
+;------------------------------------------------------------------------------
+
+                         PUSH {R0, R1, R2, LR}
+interruptServiceTable    MOVNE R1, #InterruptCheckAddr     ;checking which hardware has interrupted, only concerned with timer
+                         LDRB R2, [R1]
+                         TST  R2, #00000001              ;checking if the timer has interrupted
+                         BNE acknowledgeInterrupt        ;if the timer has interrupted then ack interrupt and then do a keyboard scan to check if a key has been pressed
+
+acknowledgeInterrupt     MOV R1, #InterruptEnableDisableSetAddr
+                         LDRB R2, [R1]                          ;loading the value
+                         BIC R2, R2, #00000010                  ;setting bit 1 to 0 to acknowledge the interrupt
+                         STRB R2, [R1]                          ;storing the value back
+
+;----------------------------Keboard-scanning-----------------------------------
+keyboardScanRow1         MOV R1, #dataLatch
+                         LDRB R2, [R1]                    ;loading the value from the data latch address
+                         MOVNE R5, #:00000001               ;moving the value in R5 to be shifted
+                         ROR R5, R5, #3                   ;shifting the value by 3 to give 00100000
+                         ORR R4, R2, R5                   ;selecting row 1 by setting bit 5 to 1
+                         STRB R4, [R1]                    ;storing the value into the required memory address
+
+                         LDRB R2, [R1]
+                         TST R2, #00000001                ;checking if button 3 has been pressed
+                         MOVNE R3, #three
+                         BLNE loadValue                   ;if the button has been pressed load the value and modify it by adding one
+                         ADDNE R1, R1, #1                 ;increment is memory address for debounce checking
+                         MOVEQ R1, #0                     ;if the button is in the off state then reset the counter
+                         STRB R1, [R2]                    ;store the value in the buttons respective counter address
+                         CMP R1, #5                       ;This is checking if the button has been pressed for 5ms consecutively
+                         MOVEQ R1, #three                 ;moving the address of button 'three' into R1
+                         BLEQ storeButtonValue
+
+                         LDRB R2, [R1]
+                         TST R2, #00000010                ;Checking if button '6' has been pressed
+                         MOVNE R2, #six
+                         BLNE loadValue                   ;if the button has been pressed load the value and modify it by adding one
+                         ADDNE R1, R1, #1                 ;if the button is in the off state then reset the counter
+                         STRB R1, [R2]                    ;store the value in the buttons respective counter address
+                         CMP R1, #5                       ;This is checking if the button has been pressed for 5ms consecutively
+                         MOVEQ R1, #six                   ;moving the address of button 'three' into R1
+                         BLEQ storeButtonValue
+
+                         LDRB R2, [R1]                    ;loading the value from the data latch address
+                         TST R2, #:00000100               ;checking if button nine has been pressed
+                         MOVNE R2, #nine                  ;move value only if the button has been pressed
+                         BLNE loadValue                   ;
+                         ADDNE R1, R1, #1                 ;if the button is in the off state then reset the counter
+                         MOVEQ R1, #0                     ;if the button has not been presssed then reset the counter
+                         STRB R1, [R2]                    ;store the value
+                         CMP R1, #5                       ;This is checking if the button has been pressed for 5ms consecutively
+                         MOVEQ R1, #nine
+                         BLEQ storeButtonValue
+
+
+                         LDRB R2, [R1]
+                         TST R2, #:00001000               ;checking if hash button has been pressed
+                         MOVNE R2, #hash                  ;move value only if the button has been pressed
+                         BLNE loadValue                   ;if the button has been pressed load the value and modify it by adding one
+                         ADDNE R1, R1, #1                 ;
+                         MOVEQ R1, #0                     ;if the button has not been presssed then reset the counter
+                         STRB R1, [R2]                    ;store the value
+                         CMP R1, #5                       ;This is checking if the button has been pressed for 5ms consecutively
+                         MOVEQ R1, #three                 ;moving the address of button 'three' into R1
+                         BLEQ storeButtonValue
+
+keyboardScanRow2         MOV R1, #dataLatch
+                         LDRB R2, [R1]                    ;loading the value stored in the data latch
+                         ORR R1, R1, #:10000000           ;selecting row 2 by setting bit 5 to 1
+                         STRB R2, [R1]                    ;storing the value into the required memory address
+
+                         LDRB R2, [R1]                    ;load value from the data latch
+                         TST R2, #:00000001               ;checking if button two has been pressed
+                         MOVNE R2, #two                   ;move the value in the register only if the button has been pressed
+                         BLNE loadValue                    ;branch to load the conter value if the button has been pressed
+                         ADDNE R1, R1, #1                 ;if it has add 1 to its mem location
+                         MOVEQ R1, #0                     ;if the button has not been presssed then reset the counter
+                         STRB R1, [R2]                    ;store the value in the counter
+                         CMP R1, #5                       ;This is checking if the button has been pressed for 5ms consecutively
+                         MOVEQ R1, #three                 ;moving the address of button 'three' into R1 to store the data value of the button
+                         BLEQ storeButtonValue
+
+                         LDRB R2, [R1]                    ;load value from the data latch
+                         TST R2, #:00000010               ;checking if button five has been pressed
+                         MOVNE R2, #five                  ;if the button has been pressed load the value from the counter address
+                         BLNE loadValue                   ;if the button has been pressed load the value from the counter address
+                         ADDNE R1, R1, #1                 ;if button has been pressed add 1 to its memory location
+                         MOVEQ R1, #0                     ;if the button has not been presssed then reset the counter
+                         STRB R1, [R2]                    ;store the value into the counter address
+                         CMP R1, #5                       ;This is checking if the button has been pressed for 5ms consecutively
+                         MOVEQ R1, #three                 ;moving the address of button 'three' into R1
+                         BLEQ storeButtonValue            ;if the button has been consecutively pressed then store the value into its counter mem location
+
+                         LDRB R2, [R1]                    ;load value from the data latch
+                         TST R2, #:00000100               ;checking if button '8' has been pressed
+                         MOVNE R2, #eight
+                         BLNE loadValue                   ;if the button has been pressed load the value from the counter address
+                         ADDNE R1, R1, #1                 ;if button has been pressed add 1 to its memory location
+                         MOVEQ R1, #0                     ;if the button has not been presssed then reset the counter
+                         STRB R1, [R2]                    ;store the value into the counter address
+                         CMP R1, #5                       ;This is checking if the button has been pressed for 5ms consecutively
+                         MOVEQ R1, #three                 ;moving the address of button 'three' into R1
+                         BLEQ storeButtonValue            ;if the button has been consecutively pressed then store the value into its counter mem location
+
+                         LDRB R2, [R1]                    ;load value from the data latch
+                         TST R2, #:00001000               ;checking if button '8' has been pressed
+                         MOVNE R2, #zero                  ;if the button has been pressed load the value from the counter address
+                         BLNE loadValue                   ;if the button has been pressed load the value from the counter address
+                         ADDNE R1, R1, #1
+                         MOVEQ R1, #0                     ;if the button has not been presssed then reset the counter
+                         STRB R1, [R2]
+                         CMP R1, #5                       ;This is checking if the button has been pressed for 5ms consecutively
+                         MOVEQ R1, #three                 ;moving the address of button 'three' into R1
+                         BLEQ storeButtonValue
+
+keyboardScanRow3         MOV R1, #dataLatch
+                         LDRB R2, [R1]
+                         ORR R1, R1, #:10000000            ;selecting row 1 by setting bit 5 to 1
+                         STRB R2, [R1]                     ;storing the value into the required memory address
+
+                         LDRB R2, [R1]
+                         TST R2, #:00000001
+                         MOVNE R2, #one
+                         BLNE loadValue
+                         ADDNE R1, R1, #1
+                         STRB R1, [R2]
+                         CMP R1, #5                       ;This is checking if the button has been pressed for 5ms consecutively
+                         MOVEQ R1, #three                 ;moving the address of button 'three' into R1
+                         BLEQ storeButtonValue
+
+                         LDRB R2, [R1]
+                         TST R2, #:00000010
+                         MOVNE R2, #four
+                         BLNE loadValue
+                         ADDNE R1, R1, #1
+                         STRB R1, [R2]
+                         CMP R1, #5                       ;This is checking if the button has been pressed for 5ms consecutively
+                         MOVEQ R1, #three                 ;moving the address of button 'three' into R1
+                         BLEQ storeButtonValue
+
+                         LDRB R2, [R1]
+                         TST R2, #:00000100
+                         MOVNE R2, #seven
+                         BLNE loadValue
+                         ADDNE R1, R1, #1
+                         STRB R1, [R2]
+                         CMP R1, #5                       ;This is checking if the button has been pressed for 5ms consecutively
+                         MOVEQ R1, #three                 ;moving the address of button 'three' into R1
+                         BLEQ storeButtonValue
+
+                         LDRB R2, [R1]
+                         TST R2, #:00001000
+                         MOVNE R2, #star
+                         LDRNE R1, [R2]
+                         ADDNE R1, R1, #1
+                         STRB R1, [R2]
+                         CMP R1, #5                       ;This is checking if the button has been pressed for 5ms consecutively
+                         MOVEQ R1, #three                 ;moving the address of button 'three' into R1
+                         BLEQ storeButtonValue
+
+                         B exitInterruptMode
+
+loadValue                LDRB R1, [R2]                    ;loading the value from the data register
+                         MOV PC, LR                       ;returning back to the caller code
+
+storeButtonValue         MOV R1, #output
+                         LDRB R2, [R1]                    ;loading the value from the data register
+                         AND R2, R2, #:00001111           ;zeroing the most significan 4 bits and keep the list which is the data to be outputted once converted
+                         STRB R1, [R1]                    ;storing the value into the memory location
+                         MOV PC, LR                       ;returning to the caller code
+
+                         POP{R0, R1, R2, LR}              ;retrieving the registers
+
+exitInterruptMode        SUBS PC, LR, #4                  ;exit interrupt mode
+
+;------------------------------------------------------------------------------
+;Supervisor Mode
+;------------------------------------------------------------------------------
+
+;----------------------- SVC handler -------------------------------------------
+SVCHandler               CMP R0, #0
+                         BEQ enableTimerInterrupt
+                         CMP R0, #1
+                         BEQ OutputLCD
+
+;------------------------ initialisation ---------------------------------------
+
+SupervisorInterrupts     ;Enabling the processor to be interrupted in user mode
+                         MRS R1, CPSR                   ;moving from CPSR to R1
+                         BIC R1, R1, #:10000000         ;setting bit 7 to 0
+                         MSR R1, CPSR                   ;moving from R1 to CPSR
+                         MOV R0, #0
+                         SVC 0
+
+enableTimerInterrupt     ;enabling the timer to interrupt
+                         MOV R1, #InterruptEnableDisableSetAddr
+                         LDRB R2, [R1]
+                         ORR R2, R2, #00000001
+                         STRB R2, [R1]
+
+initialiseControlReg     ;initialising the direction of the data bits
+                         MOV R1, #directionLatch
+                         LDRB R2, [R1]
+                         AND R2, R2, #:11100000                         ;bits 0 to 4 is input wrt keyboard and bits 5 to 7 is output wrt keyboard
+
+                         ;initialising the timer compare register to 1 so that
+                         ;an interupt is genertated every 1ms
+timerCompare             MOV R1, #timerCompareRegister
+                         MOV R2, #1
+                         STRB R2, [R1]
+
+;-------------------------------------------------------------------------------
+
+;continuosly checking the memory addresses to see if a button value needs to be outputted
+
+checkForOutputNeeded     MOV R4, #0                                    ;R4 is used as an offset
+loop                     MOV R1, Output                                ;Move the starting address 
+                         LDRB R2, [R1, R4]                             ;load the check value for each button
+                         CMP R2, #1                                    ;check if the value is 1 meaning the button has been pressed
+                         BLEQ loadASCII                                ;if the address contains 1 then button has been pressed
+                         BLEQ OutputLCD                                ;output the ASCII value
+                         CMP R4, #11                                   ;check if the offset has reached 11
+                         MOVEQ R4, #0                                  ;reset if it has
+                         ADDNE R4, R4, #1                              ;if it hasn't increment the offset by 1
+                         B loop                                        ;branch back to the start - always checking
+
+loadASCII                MOV R5, ASCIIValues
+                         LDRB R6, [R5, R4]                             ;moving the corresponding ASCII value into R6 to be outputted onto the LCD
+                         MOV PC, LR
+
+
+OutputLCD                PUSH {R1, R2, R5, R0, R3, R4, R9, R12, R11}    ;save registers
+checkAgain               MOV R1, #port_B
+                         MOV R2, #input_read
+                         STRB R2, [R1]                                  ;setting to read control
+                         MOV R5, #input_read_enable_bus
+                         STRB R5, [R1]                                  ;enable bus
+                         MOV R0, #port_A
+                         LDRB R3, [R0]                                  ;loads data bits from data reg
+                         STRB R2, [R1]                                  ;disable bus
+                         MOV R4, #LCDStatusCheck                        ;allows to check if LCD is busy
+                         TST R3, R4                                     ;checking if bit 7 is high
+                         BNE checkAgain                                 ;if equal, loop back
+                         MOV R9, #output_write                          ;R/~W=0, RS=1, E=0
+                         STRB R9, [R1]                                  ;store into port_B
+                         STRB R6, [R0]                                  ;storing seconds count into data reg
+                         MOV R12, #output_write_enable_bus
+                         STRB R12, [R1]                                 ;enable bus
+                         MOV R11, #output_write                         ;disable bus
+                         STRB R11, [R1]
+                         POP {R11, R12, R9, R4, R3, R0, R5, R2, R1}     ;restore register
+                         MOV PC, LR
+;-------------------------------------------------------------------------------
+ exitSVC                 MOVS PC, LR                ;Exit the supervisor mode

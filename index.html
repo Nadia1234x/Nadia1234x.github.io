@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <!--CSS-->
+    <style>
+        /* Fixed/sticky icon bar (vertically aligned 50% from the top of the screen) */
+.icon-bar {
+  position: fixed;
+  top: 50%;
+  -webkit-transform: translateY(-50%);
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+}
+
+/* Style the icon bar links */
+.icon-bar a {
+  display: block;
+  text-align: center;
+  padding: 16px;
+  transition: all 0.3s ease;
+  color: white;
+  font-size: 20px;
+}
+
+/* Style the social media icons with color, if you want */
+.icon-bar a:hover {
+  background-color: #000;
+}
+
+.facebook {
+  background: #3B5998;
+  color: white;
+}
+
+.twitter {
+  background: #55ACEE;
+  color: white;
+}
+
+.google {
+  background: #dd4b39;
+  color: white;
+}
+
+.linkedin {
+  background: #007bb5;
+  color: white;
+}
+
+.youtube {
+  background: #bb0000;
+  color: white;
+}
+img {
+  border-radius: 50%;
+}
+
+body, html {
+    height: 100%;
+}
+
+.parallax {
+    /* The image used */
+    background-image: url('codingcomp.jpg');
+   
+    /* Full height */
+    height: 100%; 
+
+    /* Create the parallax scrolling effect */
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.parallaxi {
+    /* The image used */
+    background-image: url('notebook2.jpg');
+
+    /* Full height */
+    height: 100%; 
+
+    /* Create the parallax scrolling effect */
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+
+body {
+  margin: 0;
+  font-size: 28px;
+}
+
+.header {
+  background-color: #f1f1f1;
+  padding: 30px;
+  text-align: center;
+}
+
+#navbar {
+  overflow: hidden;
+  background-color: #333;
+}
+
+#navbar a {
+  float: left;
+  display: block;
+  color: #f2f2f2;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+  font-size: 17px;
+}
+
+#navbar a:hover {
+  background-color: #ddd;
+  color: black;
+}
+
+#navbar a.active {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.content {
+  padding: 16px;
+}
+
+.sticky {
+  position: fixed;
+  top: 0;
+  width: 100%;
+}
+
+.sticky + .content {
+  padding-top: 60px;
+}
+
+#imagenad{
+    
+    vertical-align: middle;
+}
+
+        
+    </style>
+    <title>Nadia Noormohamed</title>
+    
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css">
+
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+    <!-- Popper JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
+
+    <!-- Latest compiled JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
+    
+    <!-- character set -->
+    <meta charset="utf-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+
+<body>
+    
+
+   
+
+    
+<nav class="navbar navbar-expand-sm bg-dark navbar-dark sticky-top">
+  <a class="navbar-brand" href="index.html">Nadia Noormohamed</a>
+  <ul class="navbar-nav">
+      <li class="nav-item">
+      <a class="nav-link" href="index.html">Home</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="CV.html">CV</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#">Link</a>
+    </li>
+  </ul>
+</nav>
+
+    <script>
+ window.onscroll = function() {myFunction()};
+
+var navbar = document.getElementById("navbar");
+var sticky = navbar.offsetTop;
+
+function myFunction() {
+  if (window.pageYOffset >= sticky) {
+    navbar.classList.add("sticky")
+  } else {
+    navbar.classList.remove("sticky");
+  }
+}
+    </script>
+<!--
+     <nav id="navbar-example2"
+  class="navbar navbar-expand-sm bg-info navbar-dark">
+
+  Brand/logo
+<a class="navbar-brand" href="#">
+    <img src="n3.png" width="30" height="30" class="d-inline-block align-top" alt="">
+    Nadia Noormohamed
+  </a>
+  
+   Links
+  <div id="navbar">
+  <ul class="navbar-nav">
+    <li class="nav-item">
+      <a class="nav-link" href="#">Home</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="CV.html">CV</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="Photography.html">Photography</a>
+    </li>
+  </ul>
+  </div>
+</nav>-->
+
+
+
+        
+               <!--<div class="jumbotron jumbotron-fluid">
+           <div class="container-fluid">
+               <center><h1>Nadia Noormohamed</h1></center>      
+               <center><p>University of Manchester, Bsc Computer Science</p></center>  
+
+           </div>
+        </div>-->
+        
+        <div class="parallax">
+            <p>Nadia Noormohamed</p>
+        </div>
+
+<div style="height:500px;background-color:none;font-size:12px">
+<div class="container">
+         
+
+            <div class="row">
+                <div class="col-lg-4">
+                   
+
+
+
+
+<!-- The social media icon bar -->
+
+
+                </div>
+                <div class="col-lg-4">
+                       <center> <img src="nadia.jpg" id = "imagenad" alt="Avatar" style="width:150px"></center>
+
+                   <center><h4>A few words about me</h4></center>
+                   <center><p>Currently a Third year Student at the University of Manchester studying Computer Science. I am predicted to achive a first class honours degree. My final year project: Host Based Intrusion Detection in a Cloud, relates to the field of Network Security. I am looking to undertake a position relating to Computer Networks, Network Security and/or Software Engineering. </p></center>
+                </div>
+                <div class="col-lg-4">
+               
+                </div>
+              
+            </div>
+        </div>
+</div>
+
+ <div class="parallaxi"></div>
+
+<div style="height:500px;background-color:none;font-size:12px">
+<div class="container">
+         
+
+            <div class="row">
+                <div class="col-lg-4">
+                  
+
+
+
+<!-- Load font awesome icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<!-- The social media icon bar -->
+
+
+                </div>
+                <div class="col-lg-4">
+                    
+                     
+                   <center><h4>A few words about me</h4><center>
+                   <center><p>Currently a Third year Student at the University of Manchester studying Computer Science. I am predicted to achive a first class honours degree. My final year project: Host Based Intrusion Detection in a Cloud, relates to the field of Network Security. I am looking to undertake a position relating to Computer Networks, Network Security and/or Software Engineering. </p><center>
+                </div>
+                <div class="col-lg-4">
+               
+                </div>
+              
+            </div>
+        </div>
+</div>
+
+
+      
+                                   <div class="icon-bar">
+  <a href="#" class="google"><i class="fa fa-google"></i></a> 
+  <a href="https://www.linkedin.com/in/nadianoormohamed/" class="linkedin"><i class="fa fa-linkedin"></i></a>
+  <a href="#" class="youtube"><i class="fa fa-youtube"></i></a> 
+</div>
+
+        <div data-spy="scroll" data-target="#navbar-example2" data-offset="0">
+  <h4 id="Home"></h4>
+  <!--Start of container --> 
+  
+        
+  <!--End of container -->      
+  
+</div>
+
+</body>
+</html>
